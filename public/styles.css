@@ -424,6 +424,7 @@ body {
 }
 
 .product-card-image {
+  position: relative;
   aspect-ratio: 4 / 5;
   overflow: hidden;
   background: var(--color-ivory);
@@ -438,6 +439,47 @@ body {
 
 .product-card:hover .product-card-image img {
   transform: scale(1.05);
+}
+
+.gallery-controls {
+  position: absolute;
+  inset: auto 1rem 1rem auto;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 2;
+}
+
+.gallery-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gallery-indicators {
+  position: absolute;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.35rem;
+  z-index: 2;
+}
+
+.gallery-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.gallery-dot.active {
+  background: var(--color-gold);
 }
 
 .product-card-body {

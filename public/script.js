@@ -64,10 +64,23 @@ async function loadProducts() {
       return;
     }
 
-    grid.innerHTML = products.map((p) => `
-      <article class="product-card">
+    grid.innerHTML = products.map((p) => {
+      const imageUrls = (p.images && p.images.length) ? p.images.map((img) => img.url) : [p.imageUrl];
+      const encodedImages = encodeURIComponent(JSON.stringify(imageUrls));
+      const hasGallery = imageUrls.length > 1;
+      return `
+      <article class="product-card" data-images="${encodedImages}" data-image-index="0">
         <div class="product-card-image">
-          <img src="${p.imageUrl}" alt="${escapeHtml(p.name)}" loading="lazy">
+          <img src="${imageUrls[0]}" alt="${escapeHtml(p.name)}" loading="lazy">
+          ${hasGallery ? `
+            <div class="gallery-controls">
+              <button type="button" class="gallery-btn prev" aria-label="Previous image">‹</button>
+              <button type="button" class="gallery-btn next" aria-label="Next image">›</button>
+            </div>
+            <div class="gallery-indicators">
+              ${imageUrls.map((_, idx) => `<span class="gallery-dot${idx === 0 ? ' active' : ''}"></span>`).join('')}
+            </div>
+          ` : ''}
         </div>
         <div class="product-card-body">
           ${p.category ? `<span class="product-category">${escapeHtml(p.category)}</span>` : ''}
@@ -76,9 +89,32 @@ async function loadProducts() {
           <p class="product-description">${escapeHtml(p.description)}</p>
         </div>
       </article>
-    `).join('');
+    `;
+    }).join('');
 
-    grid.querySelectorAll('.product-card').forEach((card) => observer.observe(card));
+    grid.querySelectorAll('.product-card').forEach((card) => {
+      observer.observe(card);
+      const imageUrls = JSON.parse(decodeURIComponent(card.dataset.images || '[]'));
+      if (imageUrls.length <= 1) return;
+
+      const img = card.querySelector('.product-card-image img');
+      const dots = Array.from(card.querySelectorAll('.gallery-dot'));
+      const updateImage = (index) => {
+        card.dataset.imageIndex = String(index);
+        img.src = imageUrls[index];
+        dots.forEach((dot, idx) => dot.classList.toggle('active', idx === index));
+      };
+
+      card.querySelectorAll('.gallery-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const currentIndex = Number(card.dataset.imageIndex || '0');
+          const nextIndex = btn.classList.contains('next')
+            ? (currentIndex + 1) % imageUrls.length
+            : (currentIndex - 1 + imageUrls.length) % imageUrls.length;
+          updateImage(nextIndex);
+        });
+      });
+    });
   } catch {
     grid.innerHTML = '<p class="products-empty">Unable to load products. Please refresh the page.</p>';
   }
