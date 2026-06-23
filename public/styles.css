@@ -622,6 +622,25 @@ body {
   letter-spacing: 0.1em;
 }
 
+.footer-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.footer-contact-link {
+  color: var(--color-gold);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.footer-contact-link:hover {
+  color: var(--color-cream);
+  text-decoration: underline;
+}
+
 .footer-social {
   display: flex;
   gap: 1rem;
