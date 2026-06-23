@@ -28,6 +28,12 @@
         <li><a href="#products">Collection</a></li>
         <li><a href="#connect">Connect</a></li>
       </ul>
+      <div class="nav-actions">
+        <button class="cart-toggle" id="cart-toggle" type="button" aria-label="Open cart">
+          <span>Cart</span>
+          <span class="cart-count" id="cart-count">0</span>
+        </button>
+      </div>
     </nav>
   </header>
 
@@ -116,6 +122,25 @@
         </div>
       </div>
     </section>
+
+    <div class="cart-drawer" id="cart-drawer" aria-hidden="true">
+      <div class="cart-drawer-header">
+        <div>
+          <h2>Your Cart</h2>
+          <p id="cart-items-count">0 items</p>
+        </div>
+        <button type="button" id="cart-close" aria-label="Close cart">×</button>
+      </div>
+      <div class="cart-items" id="cart-items"></div>
+      <div class="cart-footer">
+        <div class="cart-summary">
+          <span>Total</span>
+          <strong id="cart-total">LKR 0</strong>
+        </div>
+        <button type="button" id="cart-checkout" class="btn btn-primary">Checkout</button>
+      </div>
+    </div>
+    <div class="cart-backdrop" id="cart-backdrop"></div>
 
     <section id="connect" class="connect">
       <div class="container">

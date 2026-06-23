@@ -51,6 +51,175 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+const CART_STORAGE_KEY = 'kaviKattamCart';
+let cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
+
+function saveCart() {
+  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  renderCart();
+  updateCartCounter();
+}
+
+function updateCartCounter() {
+  const counter = document.getElementById('cart-count');
+  if (!counter) return;
+  const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+  counter.textContent = totalQty;
+}
+
+function findCartItem(productId) {
+  return cart.find((item) => item.id === String(productId));
+}
+
+function addToCart(productId) {
+  const product = allProducts.find((p) => String(p.id) === String(productId));
+  if (!product) return;
+  const existing = findCartItem(productId);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    cart.push({
+      id: String(product.id),
+      name: product.name,
+      price: Number(product.price) || 0,
+      imageUrl: product.images?.[0]?.url || product.imageUrl || '',
+      quantity: 1,
+    });
+  }
+  saveCart();
+  showCartMessage(`${product.name} added to cart`);
+}
+
+function removeCartItem(productId) {
+  cart = cart.filter((item) => item.id !== String(productId));
+  saveCart();
+}
+
+function changeCartQuantity(productId, delta) {
+  const item = findCartItem(productId);
+  if (!item) return;
+  item.quantity += delta;
+  if (item.quantity < 1) {
+    removeCartItem(productId);
+  } else {
+    saveCart();
+  }
+}
+
+function getCartTotal() {
+  return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+function renderCart() {
+  const itemsContainer = document.getElementById('cart-items');
+  const totalEl = document.getElementById('cart-total');
+  const countEl = document.getElementById('cart-items-count');
+  if (!itemsContainer || !totalEl || !countEl) return;
+
+  countEl.textContent = `${cart.length} item${cart.length === 1 ? '' : 's'}`;
+  if (cart.length === 0) {
+    itemsContainer.innerHTML = '<p class="cart-empty">Your cart is empty. Add a product to continue.</p>';
+    totalEl.textContent = 'LKR 0';
+    return;
+  }
+
+  itemsContainer.innerHTML = cart.map((item) => `
+    <div class="cart-item">
+      <div class="cart-item-thumb">
+        <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}">
+      </div>
+      <div class="cart-item-meta">
+        <h3>${escapeHtml(item.name)}</h3>
+        <p>${formatPrice(item.price)}</p>
+        <div class="cart-quantity">
+          <button type="button" class="qty-btn" data-action="decrease" data-id="${item.id}" aria-label="Decrease quantity">−</button>
+          <span>${item.quantity}</span>
+          <button type="button" class="qty-btn" data-action="increase" data-id="${item.id}" aria-label="Increase quantity">+</button>
+        </div>
+      </div>
+      <button type="button" class="cart-remove" data-id="${item.id}" aria-label="Remove item">×</button>
+    </div>
+  `).join('');
+
+  totalEl.textContent = formatPrice(getCartTotal());
+
+  itemsContainer.querySelectorAll('.qty-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      const { action, id } = button.dataset;
+      changeCartQuantity(id, action === 'increase' ? 1 : -1);
+    });
+  });
+
+  itemsContainer.querySelectorAll('.cart-remove').forEach((button) => {
+    button.addEventListener('click', () => {
+      removeCartItem(button.dataset.id);
+    });
+  });
+}
+
+function toggleCart(open) {
+  const drawer = document.getElementById('cart-drawer');
+  const backdrop = document.getElementById('cart-backdrop');
+  if (!drawer || !backdrop) return;
+  drawer.classList.toggle('open', open);
+  backdrop.classList.toggle('active', open);
+  drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+}
+
+function showCartMessage(message) {
+  const toast = document.createElement('div');
+  toast.className = 'cart-toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('visible'));
+  setTimeout(() => {
+    toast.classList.remove('visible');
+    toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+  }, 2600);
+}
+
+function setupCart() {
+  const toggleBtn = document.getElementById('cart-toggle');
+  const closeBtn = document.getElementById('cart-close');
+  const backdrop = document.getElementById('cart-backdrop');
+  const checkoutBtn = document.getElementById('cart-checkout');
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      renderCart();
+      toggleCart(true);
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => toggleCart(false));
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener('click', () => toggleCart(false));
+  }
+
+  if (checkoutBtn) {
+    checkoutBtn.addEventListener('click', () => {
+      if (cart.length === 0) {
+        showCartMessage('Your cart is empty. Add at least one product.');
+        return;
+      }
+      const messageLines = ['Hi Kavi Kattam, I would like to order:'];
+      cart.forEach((item) => {
+        messageLines.push(`${item.quantity} x ${item.name}`);
+      });
+      messageLines.push(`Total: ${formatPrice(getCartTotal())}`);
+      messageLines.push('Please let me know how to complete the order.');
+      const encoded = encodeURIComponent(messageLines.join('\n'));
+      window.open(`https://wa.me/94767243839?text=${encoded}`, '_blank');
+    });
+  }
+
+  updateCartCounter();
+  renderCart();
+}
+
 let allProducts = [];
 let activeCategory = 'all';
 
@@ -111,6 +280,7 @@ function renderProducts(products) {
           <h3>${escapeHtml(p.name)}</h3>
           <p class="product-price">${formatPrice(p.price)}</p>
           <p class="product-description">${escapeHtml(p.description)}</p>
+          <button type="button" class="btn btn-cart add-to-cart-btn" data-product-id="${p.id}">Add to Cart</button>
         </div>
       </article>
     `;
@@ -138,6 +308,10 @@ function renderProducts(products) {
         updateImage(nextIndex);
       });
     });
+  });
+
+  grid.querySelectorAll('.add-to-cart-btn').forEach((button) => {
+    button.addEventListener('click', () => addToCart(button.dataset.productId));
   });
 }
 
@@ -175,5 +349,6 @@ function setupCategoryFilters() {
   });
 }
 
+setupCart();
 setupCategoryFilters();
 loadProducts();
