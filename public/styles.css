@@ -397,6 +397,30 @@ body {
   background: white;
 }
 
+.product-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.category-filter {
+  border: 1px solid rgba(0,0,0,0.08);
+  background: white;
+  color: var(--color-burgundy-deep);
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.category-filter:hover,
+.category-filter.active {
+  background: var(--color-burgundy-deep);
+  color: var(--color-cream);
+  border-color: var(--color-burgundy-deep);
+}
+
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

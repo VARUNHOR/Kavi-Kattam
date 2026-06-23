@@ -51,24 +51,48 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-async function loadProducts() {
+let allProducts = [];
+let activeCategory = 'all';
+
+function normalizeCategory(category) {
+  if (!category) return 'Others';
+  const normalized = category.trim().toLowerCase();
+  if (normalized.includes('saree') || normalized.includes('sari')) return 'Sarees';
+  if (normalized.includes('dress')) return 'Dresses';
+  if (normalized.includes('jewel')) return 'Jewellery';
+  if (['sarees', 'dresses', 'jewellery', 'jewelry', 'accessories'].includes(normalized)) {
+    if (normalized === 'jewelry') return 'Jewellery';
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  }
+  return 'Others';
+}
+
+function updateCategoryButtons() {
+  document.querySelectorAll('.category-filter').forEach((button) => {
+    button.classList.toggle('active', button.dataset.category === activeCategory);
+  });
+}
+
+function filterProducts(products) {
+  if (activeCategory === 'all') return products;
+  return products.filter((p) => normalizeCategory(p.category) === activeCategory);
+}
+
+function renderProducts(products) {
   const grid = document.getElementById('products-grid');
   if (!grid) return;
+  const filtered = filterProducts(products);
 
-  try {
-    const res = await fetch('/api/products');
-    const products = await res.json();
+  if (filtered.length === 0) {
+    grid.innerHTML = `<p class="products-empty">No products found in ${activeCategory}.</p>`;
+    return;
+  }
 
-    if (products.length === 0) {
-      grid.innerHTML = '<p class="products-empty">New collections coming soon. Follow us on social media for updates!</p>';
-      return;
-    }
-
-    grid.innerHTML = products.map((p) => {
-      const imageUrls = (p.images && p.images.length) ? p.images.map((img) => img.url) : [p.imageUrl];
-      const encodedImages = encodeURIComponent(JSON.stringify(imageUrls));
-      const hasGallery = imageUrls.length > 1;
-      return `
+  grid.innerHTML = filtered.map((p) => {
+    const imageUrls = (p.images && p.images.length) ? p.images.map((img) => img.url) : [p.imageUrl];
+    const encodedImages = encodeURIComponent(JSON.stringify(imageUrls));
+    const hasGallery = imageUrls.length > 1;
+    return `
       <article class="product-card" data-images="${encodedImages}" data-image-index="0">
         <div class="product-card-image">
           <img src="${imageUrls[0]}" alt="${escapeHtml(p.name)}" loading="lazy">
@@ -90,34 +114,66 @@ async function loadProducts() {
         </div>
       </article>
     `;
-    }).join('');
+  }).join('');
 
-    grid.querySelectorAll('.product-card').forEach((card) => {
-      observer.observe(card);
-      const imageUrls = JSON.parse(decodeURIComponent(card.dataset.images || '[]'));
-      if (imageUrls.length <= 1) return;
+  grid.querySelectorAll('.product-card').forEach((card) => {
+    observer.observe(card);
+    const imageUrls = JSON.parse(decodeURIComponent(card.dataset.images || '[]'));
+    if (imageUrls.length <= 1) return;
 
-      const img = card.querySelector('.product-card-image img');
-      const dots = Array.from(card.querySelectorAll('.gallery-dot'));
-      const updateImage = (index) => {
-        card.dataset.imageIndex = String(index);
-        img.src = imageUrls[index];
-        dots.forEach((dot, idx) => dot.classList.toggle('active', idx === index));
-      };
+    const img = card.querySelector('.product-card-image img');
+    const dots = Array.from(card.querySelectorAll('.gallery-dot'));
+    const updateImage = (index) => {
+      card.dataset.imageIndex = String(index);
+      img.src = imageUrls[index];
+      dots.forEach((dot, idx) => dot.classList.toggle('active', idx === index));
+    };
 
-      card.querySelectorAll('.gallery-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const currentIndex = Number(card.dataset.imageIndex || '0');
-          const nextIndex = btn.classList.contains('next')
-            ? (currentIndex + 1) % imageUrls.length
-            : (currentIndex - 1 + imageUrls.length) % imageUrls.length;
-          updateImage(nextIndex);
-        });
+    card.querySelectorAll('.gallery-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const currentIndex = Number(card.dataset.imageIndex || '0');
+        const nextIndex = btn.classList.contains('next')
+          ? (currentIndex + 1) % imageUrls.length
+          : (currentIndex - 1 + imageUrls.length) % imageUrls.length;
+        updateImage(nextIndex);
       });
     });
+  });
+}
+
+async function loadProducts() {
+  const grid = document.getElementById('products-grid');
+  if (!grid) return;
+
+  try {
+    const res = await fetch('/api/products');
+    const products = await res.json();
+    allProducts = products.map((p) => ({
+      ...p,
+      category: normalizeCategory(p.category),
+    }));
+
+    if (allProducts.length === 0) {
+      grid.innerHTML = '<p class="products-empty">New collections coming soon. Follow us on social media for updates!</p>';
+      return;
+    }
+
+    updateCategoryButtons();
+    renderProducts(allProducts);
   } catch {
     grid.innerHTML = '<p class="products-empty">Unable to load products. Please refresh the page.</p>';
   }
 }
 
+function setupCategoryFilters() {
+  document.querySelectorAll('.category-filter').forEach((button) => {
+    button.addEventListener('click', () => {
+      activeCategory = button.dataset.category;
+      updateCategoryButtons();
+      renderProducts(allProducts);
+    });
+  });
+}
+
+setupCategoryFilters();
 loadProducts();
