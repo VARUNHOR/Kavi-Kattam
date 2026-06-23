@@ -65,7 +65,10 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+<<<<<<< HEAD
   position: relative;
+=======
+>>>>>>> c5e399a (new try)
   padding: 1rem 0;
 }
 
@@ -75,10 +78,13 @@ body {
   gap: 0.5rem;
   text-decoration: none;
   color: var(--color-burgundy);
+<<<<<<< HEAD
   /* center the logo within the nav */
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+=======
+>>>>>>> c5e399a (new try)
 }
 
 .logo-icon {
