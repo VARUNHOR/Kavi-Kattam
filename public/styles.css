@@ -76,8 +76,13 @@ body {
   color: var(--color-burgundy);
 }
 
-.logo-icon {
-  font-size: 1.25rem;
+.logo-image {
+  height: 40px;
+  width: 40px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: rgba(218, 165, 105, 0.1);
+  padding: 4px;
 }
 
 .logo-text {
@@ -616,6 +621,15 @@ body {
   font-weight: 600;
 }
 
+.footer-logo-image {
+  height: 35px;
+  width: 35px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: rgba(218, 165, 105, 0.15);
+  padding: 3px;
+}
+
 .footer-tagline {
   font-style: italic;
   opacity: 0.7;
@@ -648,17 +662,17 @@ body {
 }
 
 .footer-social a {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 2px solid var(--color-gold);
   border-radius: 50%;
-  color: var(--color-cream);
+  color: var(--color-gold);
   text-decoration: none;
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
   letter-spacing: 0.05em;
   transition: all var(--transition);
 }
