@@ -28,6 +28,15 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,
+    sort_order INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+  );
 `);
 
 function seedAdmin() {
@@ -43,5 +52,22 @@ function seedAdmin() {
 }
 
 seedAdmin();
+
+// Migrate legacy single-image `image_path` into `images` table
+(function migrateImages() {
+  try {
+    const rows = db.prepare("SELECT id, image_path FROM products WHERE image_path IS NOT NULL AND image_path != ''").all();
+    const insert = db.prepare('INSERT INTO images (product_id, filename, sort_order) VALUES (?, ?, ?)');
+    const update = db.prepare('UPDATE products SET image_path = NULL WHERE id = ?');
+
+    for (const r of rows) {
+      insert.run(r.id, r.image_path, 0);
+      update.run(r.id);
+      console.log(`Migrated image for product ${r.id}: ${r.image_path}`);
+    }
+  } catch (err) {
+    console.error('Image migration failed:', err.message);
+  }
+})();
 
 module.exports = db;

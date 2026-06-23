@@ -60,15 +60,20 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: 'Not authenticated' });
 }
 
+const MAX_IMAGES = 6;
+
 function formatProduct(row) {
   if (!row) return null;
+  const imgs = db.prepare('SELECT id, filename FROM images WHERE product_id = ? ORDER BY sort_order ASC').all(row.id);
+  const images = imgs.map((i) => ({ id: i.id, url: `/uploads/${i.filename}`, filename: i.filename }));
   return {
     id: row.id,
     name: row.name,
     description: row.description,
     price: row.price,
     category: row.category,
-    imageUrl: row.image_path ? `/uploads/${row.image_path}` : null,
+    imageUrl: images.length > 0 ? images[0].url : null,
+    images,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -136,16 +141,18 @@ app.get('/api/products/:id', (req, res) => {
   res.json(formatProduct(row));
 });
 
-app.post('/api/admin/products', requireAuth, upload.single('image'), (req, res) => {
+app.post('/api/admin/products', requireAuth, upload.array('images', MAX_IMAGES), (req, res) => {
   const { name, description, price, category } = req.body;
+  const files = req.files || [];
 
   if (!name || !name.trim()) {
-    if (req.file) fs.unlinkSync(req.file.path);
+    // cleanup uploaded files
+    for (const f of files) if (f && f.path && fs.existsSync(f.path)) fs.unlinkSync(f.path);
     return res.status(400).json({ error: 'Product name is required' });
   }
 
-  if (!req.file) {
-    return res.status(400).json({ error: 'Product image is required' });
+  if (!files.length) {
+    return res.status(400).json({ error: 'At least one product image is required' });
   }
 
   const result = db
@@ -158,41 +165,58 @@ app.post('/api/admin/products', requireAuth, upload.single('image'), (req, res) 
       (description || '').trim(),
       price ? parseFloat(price) : null,
       (category || '').trim(),
-      req.file.filename
+      null
     );
 
-  const row = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
+  const productId = result.lastInsertRowid;
+  const insertImage = db.prepare('INSERT INTO images (product_id, filename, sort_order) VALUES (?, ?, ?)');
+  files.forEach((f, i) => insertImage.run(productId, f.filename, i));
+
+  const row = db.prepare('SELECT * FROM products WHERE id = ?').get(productId);
   res.status(201).json(formatProduct(row));
 });
 
-app.put('/api/admin/products/:id', requireAuth, upload.single('image'), (req, res) => {
+app.put('/api/admin/products/:id', requireAuth, upload.array('images', MAX_IMAGES), (req, res) => {
   const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
 
   if (!existing) {
-    if (req.file) fs.unlinkSync(req.file.path);
+    // cleanup
+    for (const f of (req.files || [])) if (f && f.path && fs.existsSync(f.path)) fs.unlinkSync(f.path);
     return res.status(404).json({ error: 'Product not found' });
   }
 
-  const { name, description, price, category } = req.body;
+  const { name, description, price, category, removeImageIds } = req.body;
   const newName = name !== undefined ? name.trim() : existing.name;
   const newDescription = description !== undefined ? description.trim() : existing.description;
   const newPrice = price !== undefined && price !== '' ? parseFloat(price) : existing.price;
   const newCategory = category !== undefined ? category.trim() : existing.category;
-  let imagePath = existing.image_path;
 
-  if (req.file) {
-    if (existing.image_path) {
-      const oldPath = path.join(uploadsDir, existing.image_path);
-      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  // Handle removal of existing images (optional)
+  if (removeImageIds) {
+    const idsToRemove = String(removeImageIds).split(',').map((v) => Number(v)).filter(Boolean);
+    if (idsToRemove.length) {
+      const rows = db.prepare(`SELECT id, filename FROM images WHERE id IN (${idsToRemove.map(()=>'?').join(',')})`).all(...idsToRemove);
+      for (const r of rows) {
+        const p = path.join(uploadsDir, r.filename);
+        if (fs.existsSync(p)) fs.unlinkSync(p);
+      }
+      db.prepare(`DELETE FROM images WHERE id IN (${idsToRemove.map(()=>'?').join(',')})`).run(...idsToRemove);
     }
-    imagePath = req.file.filename;
+  }
+
+  // Add newly uploaded images
+  const files = req.files || [];
+  if (files.length) {
+    const maxExisting = db.prepare('SELECT COUNT(*) AS cnt FROM images WHERE product_id = ?').get(req.params.id).cnt;
+    const insertImage = db.prepare('INSERT INTO images (product_id, filename, sort_order) VALUES (?, ?, ?)');
+    files.forEach((f, i) => insertImage.run(req.params.id, f.filename, maxExisting + i));
   }
 
   db.prepare(
     `UPDATE products
-     SET name = ?, description = ?, price = ?, category = ?, image_path = ?, updated_at = datetime('now')
+     SET name = ?, description = ?, price = ?, category = ?, updated_at = datetime('now')
      WHERE id = ?`
-  ).run(newName, newDescription, newPrice, newCategory, imagePath, req.params.id);
+  ).run(newName, newDescription, newPrice, newCategory, req.params.id);
 
   const row = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
   res.json(formatProduct(row));
@@ -205,11 +229,17 @@ app.delete('/api/admin/products/:id', requireAuth, (req, res) => {
     return res.status(404).json({ error: 'Product not found' });
   }
 
-  if (existing.image_path) {
-    const imagePath = path.join(uploadsDir, existing.image_path);
-    if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+  // delete images from disk
+  const imgs = db.prepare('SELECT filename FROM images WHERE product_id = ?').all(req.params.id);
+  for (const i of imgs) {
+    const p = path.join(uploadsDir, i.filename);
+    if (fs.existsSync(p)) fs.unlinkSync(p);
   }
 
+  // delete image records
+  db.prepare('DELETE FROM images WHERE product_id = ?').run(req.params.id);
+
+  // delete product
   db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
   res.json({ success: true });
 });

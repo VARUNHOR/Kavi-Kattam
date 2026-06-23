@@ -28,8 +28,10 @@ function resetForm() {
   document.getElementById('form-title').textContent = 'Add New Product';
   document.getElementById('submit-btn').textContent = 'Save Product';
   document.getElementById('cancel-btn').hidden = true;
-  document.getElementById('image').required = true;
-  document.getElementById('image-preview').hidden = true;
+  const imagesInput = document.getElementById('images');
+  if (imagesInput) imagesInput.required = true;
+  const previews = document.getElementById('image-previews');
+  if (previews) { previews.innerHTML = ''; previews.hidden = true; }
 }
 
 function startEdit(product) {
@@ -42,11 +44,24 @@ function startEdit(product) {
   document.getElementById('form-title').textContent = 'Edit Product';
   document.getElementById('submit-btn').textContent = 'Update Product';
   document.getElementById('cancel-btn').hidden = false;
-  document.getElementById('image').required = false;
+  const imagesInput = document.getElementById('images');
+  if (imagesInput) imagesInput.required = false;
 
-  if (product.imageUrl) {
-    document.getElementById('preview-img').src = product.imageUrl;
-    document.getElementById('image-preview').hidden = false;
+  const previews = document.getElementById('image-previews');
+  previews.innerHTML = '';
+
+  // Show existing images with remove checkbox
+  if (product.images && product.images.length) {
+    product.images.forEach((img) => {
+      const item = document.createElement('div');
+      item.className = 'preview-item existing';
+      item.innerHTML = `
+        <img src="${img.url}" alt="image-${img.id}">
+        <label><input type="checkbox" class="remove-image-checkbox" value="${img.id}"> Remove</label>
+      `;
+      previews.appendChild(item);
+    });
+    previews.hidden = false;
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -114,17 +129,22 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-document.getElementById('image').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  const preview = document.getElementById('image-preview');
-  const img = document.getElementById('preview-img');
+document.getElementById('images').addEventListener('change', (e) => {
+  const files = Array.from(e.target.files || []);
+  const previews = document.getElementById('image-previews');
+  previews.innerHTML = '';
 
-  if (file) {
+  files.forEach((file) => {
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+    const img = document.createElement('img');
     img.src = URL.createObjectURL(file);
-    preview.hidden = false;
-  } else {
-    preview.hidden = true;
-  }
+    img.alt = file.name;
+    item.appendChild(img);
+    previews.appendChild(item);
+  });
+
+  if (files.length) previews.hidden = false; else previews.hidden = true;
 });
 
 document.getElementById('cancel-btn').addEventListener('click', resetForm);
@@ -138,7 +158,13 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
   errorEl.hidden = true;
   successEl.hidden = true;
 
-  const formData = new FormData(e.target);
+  const formEl = e.target;
+  const formData = new FormData(formEl);
+
+  // collect removed existing image ids
+  const removed = Array.from(document.querySelectorAll('.remove-image-checkbox:checked')).map((c) => c.value);
+  if (removed.length) formData.set('removeImageIds', removed.join(','));
+
   const url = editingId ? `/api/admin/products/${editingId}` : '/api/admin/products';
   const method = editingId ? 'PUT' : 'POST';
 
@@ -166,6 +192,12 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
   await fetch('/api/admin/logout', { method: 'POST' });
   window.location.href = '/admin/login.html';
 });
+
+// On load, ensure images input accepts up to 6 files
+(function initImagesLimit() {
+  const imagesInput = document.getElementById('images');
+  if (imagesInput) imagesInput.setAttribute('multiple', '');
+})();
 
 checkAuth().then((ok) => {
   if (ok) loadProducts();
