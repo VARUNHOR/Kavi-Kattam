@@ -40,7 +40,13 @@
 
           <div class="form-group">
             <label for="category">Category</label>
-            <input type="text" id="category" name="category" placeholder="e.g. Sarees, Dresses, Accessories">
+            <select id="category" name="category" required>
+              <option value="" disabled selected>Select a category</option>
+              <option value="Sarees">Sarees</option>
+              <option value="Dresses">Dresses</option>
+              <option value="Jewellery">Jewellery</option>
+              <option value="Others">Others</option>
+            </select>
           </div>
 
           <div class="form-group">
