@@ -33,7 +33,7 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, observerOptions);
 
-document.querySelectorAll('.about-card, .social-card, .cta-inner').forEach((el) => {
+document.querySelectorAll('.about-card, .trust-card, .social-card, .cta-inner').forEach((el) => {
   el.style.opacity = '0';
   el.style.transform = 'translateY(20px)';
   el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
@@ -276,6 +276,7 @@ function renderProducts(products) {
           ` : ''}
         </div>
         <div class="product-card-body">
+          <span class="product-badge">${p.category === 'Jewellery' ? 'Featured' : p.category === 'Sarees' ? 'Signature' : p.category === 'Dresses' ? 'Trending' : 'Curated'}</span>
           ${p.category ? `<span class="product-category">${escapeHtml(p.category)}</span>` : ''}
           <h3>${escapeHtml(p.name)}</h3>
           <p class="product-price">${formatPrice(p.price)}</p>
