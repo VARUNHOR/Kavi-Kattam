@@ -69,20 +69,24 @@ body {
 }
 
 .logo {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.65rem;
   text-decoration: none;
   color: var(--color-burgundy);
+  line-height: 1;
 }
 
 .logo-image {
-  height: 40px;
-  width: 40px;
+  display: block;
+  height: 46px;
+  width: auto;
+  max-width: 56px;
   object-fit: contain;
-  border-radius: 50%;
-  background: rgba(218, 165, 105, 0.1);
-  padding: 4px;
+  border-radius: 999px;
+  background: rgba(218, 165, 105, 0.12);
+  padding: 3px;
+  flex-shrink: 0;
 }
 
 .logo-text {
@@ -90,6 +94,7 @@ body {
   font-size: 1.35rem;
   font-weight: 600;
   letter-spacing: 0.04em;
+  line-height: 1.1;
 }
 
 .nav-links {
