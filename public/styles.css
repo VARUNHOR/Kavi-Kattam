@@ -138,7 +138,69 @@ body {
 .nav-actions {
   display: flex;
   align-items: center;
+  gap: 0.65rem;
   margin-left: 1rem;
+}
+
+.auth-state {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.auth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-decoration: none;
+}
+
+.auth-btn:hover {
+  transform: translateY(-1px);
+}
+
+.auth-btn--ghost {
+  background: transparent;
+  color: var(--color-burgundy);
+  border-color: rgba(92, 46, 53, 0.18);
+}
+
+.auth-btn--solid {
+  background: var(--color-burgundy);
+  color: var(--color-cream);
+  border-color: var(--color-burgundy);
+}
+
+.auth-btn--solid:hover {
+  background: var(--color-burgundy-deep);
+}
+
+.auth-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(196, 163, 90, 0.16);
+  color: var(--color-burgundy);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.auth-user-pill button {
+  background: none;
+  border: none;
+  color: var(--color-burgundy);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0;
 }
 
 .cart-toggle {
@@ -1125,6 +1187,159 @@ body {
   background: var(--color-gold);
   border-color: var(--color-gold);
   color: var(--color-burgundy-deep);
+}
+
+/* Auth modal */
+.auth-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 140;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+
+.auth-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.auth-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 20, 20, 0.55);
+}
+
+.auth-modal-panel {
+  position: relative;
+  width: min(460px, 100%);
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+  z-index: 1;
+}
+
+.auth-close {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.9rem;
+  border: none;
+  background: transparent;
+  font-size: 1.6rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.auth-modal-header {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.auth-modal-header h2 {
+  font-family: var(--font-display);
+  color: var(--color-burgundy-deep);
+  margin-bottom: 0.35rem;
+}
+
+.auth-modal-subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(92, 46, 53, 0.14);
+  border-radius: 999px;
+  background: var(--color-cream);
+  color: var(--color-burgundy);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.auth-tab.active {
+  background: var(--color-burgundy);
+  color: var(--color-cream);
+  border-color: var(--color-burgundy);
+}
+
+.auth-form {
+  display: none;
+}
+
+.auth-form.active {
+  display: block;
+}
+
+.auth-form-group {
+  margin-bottom: 0.95rem;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.otp-block {
+  margin-top: 0.2rem;
+}
+
+.auth-message {
+  min-height: 1.2rem;
+  margin-top: 0.9rem;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--color-danger, #9b2c2c);
+}
+
+.auth-message.success {
+  color: #2f855a;
+}
+
+.auth-form-hint {
+  margin-top: 0.25rem;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.otp-resend {
+  margin-top: 0.45rem;
+  border: none;
+  background: transparent;
+  color: var(--color-burgundy);
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(92, 46, 53, 0.08);
+  color: var(--color-burgundy);
+  font-weight: 600;
+}
+
+.auth-user-pill button {
+  border: none;
+  background: transparent;
+  color: var(--color-burgundy);
+  font-size: 1rem;
+  cursor: pointer;
 }
 
 /* Accessibility helper */

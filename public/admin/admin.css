@@ -242,6 +242,36 @@ body.admin-page {
   padding: 2rem 0 4rem;
 }
 
+.dashboard-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, rgba(92, 46, 53, 0.96), rgba(61, 31, 36, 0.98));
+  color: white;
+  padding: 1.1rem 1.2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.stat-card strong {
+  display: block;
+  margin: 0.35rem 0 0.2rem;
+  font-size: 1.35rem;
+  font-family: var(--font-display);
+}
+
+.stat-card small,
+.stat-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
@@ -270,7 +300,31 @@ body.admin-page {
 }
 
 .panel-header h2 {
-  margin-bottom: 0;
+  margin-bottom: 0.2rem;
+}
+
+.panel-subtext {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  margin-top: 0.2rem;
+}
+
+.list-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.list-toolbar input,
+.list-toolbar select {
+  flex: 1 1 180px;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(196, 163, 90, 0.35);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: var(--color-cream);
 }
 
 .badge {
@@ -314,6 +368,7 @@ body.admin-page {
   padding: 1rem;
   border: 1px solid rgba(196, 163, 90, 0.2);
   border-radius: var(--radius);
+  background: linear-gradient(180deg, #fffdf9, #fcf7ee);
 }
 
 .product-admin-image img {
@@ -368,6 +423,10 @@ body.admin-page {
 }
 
 @media (max-width: 900px) {
+  .dashboard-summary {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-grid {
     grid-template-columns: 1fr;
   }

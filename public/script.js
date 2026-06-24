@@ -350,6 +350,287 @@ function setupCategoryFilters() {
   });
 }
 
+function setupAuth() {
+  const authModal = document.getElementById('auth-modal');
+  const authState = document.getElementById('auth-state');
+  const authMessage = document.getElementById('auth-message');
+  const authClose = document.getElementById('auth-close');
+  const authTabs = document.querySelectorAll('.auth-tab');
+  const signinForm = document.getElementById('sign-in-form');
+  const signupForm = document.getElementById('sign-up-form');
+  const signinOtpBlock = document.getElementById('signin-otp-block');
+  const signupOtpBlock = document.getElementById('signup-otp-block');
+  const signinSubmit = document.getElementById('signin-submit');
+  const signupSubmit = document.getElementById('signup-submit');
+
+  if (!authModal || !authState) return;
+
+  function setAuthMessage(message, isSuccess = false) {
+    if (!authMessage) return;
+    authMessage.textContent = message;
+    authMessage.className = `auth-message${isSuccess ? ' success' : ''}`;
+  }
+
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function getPasswordStrength(password) {
+    let score = 0;
+    if (password.length >= 6) score += 1;
+    if (/[a-z]/.test(password)) score += 1;
+    if (/[A-Z]/.test(password)) score += 1;
+    if (/\d/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+    if (score <= 2) return 'Weak';
+    if (score <= 3) return 'Fair';
+    if (score <= 4) return 'Good';
+    return 'Strong';
+  }
+
+  function issueOtp(email, mode) {
+    const newOtp = generateOtp();
+    localStorage.setItem(`kaviKattamOtp:${email}`, newOtp);
+
+    if (mode === 'signin') {
+      if (signinOtpBlock) signinOtpBlock.hidden = false;
+      if (signinSubmit) signinSubmit.textContent = 'Verify OTP';
+      if (document.getElementById('signin-resend-otp')) document.getElementById('signin-resend-otp').hidden = false;
+      setAuthMessage(`Demo OTP for ${email}: ${newOtp}. Enter it to continue.`, false);
+      return;
+    }
+
+    if (signupOtpBlock) signupOtpBlock.hidden = false;
+    if (signupSubmit) signupSubmit.textContent = 'Verify OTP';
+    if (document.getElementById('signup-resend-otp')) document.getElementById('signup-resend-otp').hidden = false;
+    setAuthMessage(`Demo OTP for ${email}: ${newOtp}. Enter it to complete sign up.`, false);
+  }
+
+  function openAuthModal(mode = 'signin') {
+    authModal.classList.add('open');
+    authModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    setAuthMessage('');
+
+    if (signinOtpBlock) signinOtpBlock.hidden = true;
+    if (signupOtpBlock) signupOtpBlock.hidden = true;
+    if (signinSubmit) signinSubmit.textContent = 'Send OTP';
+    if (signupSubmit) signupSubmit.textContent = 'Send OTP';
+    const signinResend = document.getElementById('signin-resend-otp');
+    const signupResend = document.getElementById('signup-resend-otp');
+    if (signinResend) signinResend.hidden = true;
+    if (signupResend) signupResend.hidden = true;
+
+    authTabs.forEach((tab) => {
+      const isActive = tab.dataset.authTab === mode;
+      tab.classList.toggle('active', isActive);
+    });
+
+    document.querySelectorAll('.auth-form').forEach((form) => {
+      form.classList.toggle('active', form.id === (mode === 'signup' ? 'sign-up-form' : 'sign-in-form'));
+    });
+  }
+
+  function closeAuthModal() {
+    authModal.classList.remove('open');
+    authModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    setAuthMessage('');
+  }
+
+  function getUsers() {
+    return JSON.parse(localStorage.getItem('kaviKattamUsers') || '[]');
+  }
+
+  function generateOtp() {
+    return String(Math.floor(1000 + Math.random() * 9000));
+  }
+
+  function saveUsers(users) {
+    localStorage.setItem('kaviKattamUsers', JSON.stringify(users));
+  }
+
+  function updateAuthUI() {
+    const currentUser = JSON.parse(localStorage.getItem('kaviKattamCurrentUser') || 'null');
+    if (!currentUser) {
+      authState.innerHTML = `
+        <button type="button" class="auth-btn auth-btn--ghost" data-auth-open="signin">Sign In</button>
+        <button type="button" class="auth-btn auth-btn--solid" data-auth-open="signup">Sign Up</button>
+      `;
+      return;
+    }
+
+    authState.innerHTML = `
+      <span class="auth-user-pill">
+        <span>Hi, ${escapeHtml(currentUser.name.split(' ')[0] || currentUser.name)}</span>
+        <button type="button" data-auth-logout="true" aria-label="Sign out">×</button>
+      </span>
+    `;
+  }
+
+  document.addEventListener('click', (event) => {
+    const openButton = event.target.closest('[data-auth-open]');
+    if (openButton) {
+      event.preventDefault();
+      openAuthModal(openButton.dataset.authOpen || 'signin');
+      return;
+    }
+
+    const logoutButton = event.target.closest('[data-auth-logout]');
+    if (logoutButton) {
+      event.preventDefault();
+      localStorage.removeItem('kaviKattamCurrentUser');
+      updateAuthUI();
+      showCartMessage('You have been signed out');
+    }
+  });
+
+  authTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      openAuthModal(tab.dataset.authTab || 'signin');
+    });
+  });
+
+  if (authClose) {
+    authClose.addEventListener('click', closeAuthModal);
+  }
+
+  if (authModal) {
+    authModal.addEventListener('click', (event) => {
+      if (event.target.hasAttribute('data-auth-close')) {
+        closeAuthModal();
+      }
+    });
+  }
+
+  if (signinForm) {
+    signinForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const formData = new FormData(signinForm);
+      const email = String(formData.get('email') || '').trim().toLowerCase();
+      const password = String(formData.get('password') || '');
+      const otp = String(formData.get('otp') || '').trim();
+      const users = getUsers();
+      const user = users.find((entry) => entry.email.toLowerCase() === email);
+
+      if (!email || !password) {
+        setAuthMessage('Please enter your email and password.', false);
+        return;
+      }
+
+      if (!isValidEmail(email)) {
+        setAuthMessage('Please enter a valid email address.', false);
+        return;
+      }
+
+      if (!user || user.password !== password) {
+        setAuthMessage('We could not find an account with those details.', false);
+        return;
+      }
+
+      if (!signinOtpBlock?.hidden) {
+        const expectedOtp = localStorage.getItem(`kaviKattamOtp:${email}`);
+        if (otp !== expectedOtp) {
+          setAuthMessage('The OTP code is incorrect. Please try again.', false);
+          return;
+        }
+
+        localStorage.removeItem(`kaviKattamOtp:${email}`);
+        localStorage.setItem('kaviKattamCurrentUser', JSON.stringify({ name: user.name, email: user.email }));
+        updateAuthUI();
+        setAuthMessage('Welcome back! Your account is ready.', true);
+        signinForm.reset();
+        setTimeout(closeAuthModal, 800);
+        return;
+      }
+
+      issueOtp(email, 'signin');
+    });
+  }
+
+  if (signupForm) {
+    signupForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const formData = new FormData(signupForm);
+      const name = String(formData.get('name') || '').trim();
+      const email = String(formData.get('email') || '').trim().toLowerCase();
+      const password = String(formData.get('password') || '');
+      const otp = String(formData.get('otp') || '').trim();
+      const users = getUsers();
+
+      if (!name) {
+        setAuthMessage('Please enter your full name.', false);
+        return;
+      }
+
+      if (!isValidEmail(email)) {
+        setAuthMessage('Please enter a valid email address.', false);
+        return;
+      }
+
+      if (password.length < 6 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+        setAuthMessage('Please use a stronger password with at least 6 characters and a mix of letters and numbers.', false);
+        return;
+      }
+
+      if (users.some((entry) => entry.email.toLowerCase() === email)) {
+        setAuthMessage('An account with this email already exists.', false);
+        return;
+      }
+
+      if (!signupOtpBlock?.hidden) {
+        const expectedOtp = localStorage.getItem(`kaviKattamOtp:${email}`);
+        if (otp !== expectedOtp) {
+          setAuthMessage('The OTP code is incorrect. Please try again.', false);
+          return;
+        }
+
+        localStorage.removeItem(`kaviKattamOtp:${email}`);
+        users.push({ name, email, password });
+        saveUsers(users);
+        localStorage.setItem('kaviKattamCurrentUser', JSON.stringify({ name, email }));
+        updateAuthUI();
+        setAuthMessage('Account created successfully. You are now signed in.', true);
+        signupForm.reset();
+        setTimeout(closeAuthModal, 800);
+        return;
+      }
+
+      issueOtp(email, 'signup');
+    });
+  }
+
+  const signinResend = document.getElementById('signin-resend-otp');
+  const signupResend = document.getElementById('signup-resend-otp');
+
+  if (signinResend) {
+    signinResend.addEventListener('click', () => {
+      const emailField = document.getElementById('signin-email');
+      const email = (emailField?.value || '').trim().toLowerCase();
+      if (!email) {
+        setAuthMessage('Enter your email first so we can resend the OTP.', false);
+        return;
+      }
+      issueOtp(email, 'signin');
+    });
+  }
+
+  if (signupResend) {
+    signupResend.addEventListener('click', () => {
+      const emailField = document.getElementById('signup-email');
+      const email = (emailField?.value || '').trim().toLowerCase();
+      if (!email) {
+        setAuthMessage('Enter your email first so we can resend the OTP.', false);
+        return;
+      }
+      issueOtp(email, 'signup');
+    });
+  }
+
+  updateAuthUI();
+}
+
 setupCart();
 setupCategoryFilters();
+setupAuth();
 loadProducts();

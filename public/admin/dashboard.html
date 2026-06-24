@@ -27,6 +27,24 @@
   </header>
 
   <main class="admin-main container-wide">
+    <section class="dashboard-summary" aria-label="Inventory overview">
+      <div class="stat-card">
+        <span class="stat-label">Total Products</span>
+        <strong id="stats-total">0</strong>
+        <small>Live catalog items</small>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Categories</span>
+        <strong id="stats-categories">0</strong>
+        <small>Active collections</small>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Catalog Value</span>
+        <strong id="stats-value">LKR 0</strong>
+        <small>Approx. listed pricing</small>
+      </div>
+    </section>
+
     <div class="dashboard-grid">
       <section class="panel">
         <h2 id="form-title">Add New Product</h2>
@@ -78,8 +96,17 @@
 
       <section class="panel">
         <div class="panel-header">
-          <h2>Your Products</h2>
+          <div>
+            <h2>Your Products</h2>
+            <p class="panel-subtext">Manage your catalog, edit details, and keep each listing fresh.</p>
+          </div>
           <span id="product-count" class="badge">0 items</span>
+        </div>
+        <div class="list-toolbar">
+          <input type="search" id="product-search" placeholder="Search products" aria-label="Search products">
+          <select id="product-filter-category" aria-label="Filter by category">
+            <option value="">All categories</option>
+          </select>
         </div>
         <div id="products-list" class="products-admin-list">
           <p class="empty-state">No products yet. Add your first product using the form.</p>
