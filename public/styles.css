@@ -623,10 +623,17 @@ body {
   align-items: start;
 }
 
+.about-text {
+  max-width: 620px;
+  margin: 0 auto;
+  text-align: center;
+}
+
 .about-text p {
   margin-bottom: 1.25rem;
   color: var(--color-text-muted);
   font-size: 1.15rem;
+  text-align: center;
 }
 
 .about-text strong {
